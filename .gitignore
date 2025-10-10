@@ -1,0 +1,19 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Data directories
+20250425_data/
+
+# IDE-specific files
+.cursor/
+
+# Model files (too large for GitHub)
+*.keras

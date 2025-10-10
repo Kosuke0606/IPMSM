@@ -1,0 +1,16 @@
+[project]
+name = "ipmsm"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "cupy-cuda12x>=13.6.0",
+    "ipykernel>=6.30.1",
+    "jupyter>=1.1.1",
+    "matplotlib>=3.10.7",
+    "numpy>=2.3.3",
+    "pandas>=2.3.3",
+    "scikit-learn>=1.7.2",
+    "tensorflow>=2.20.0",
+]
