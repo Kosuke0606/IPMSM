@@ -11,7 +11,7 @@ wheels/
 
 # Data directories
 20250425_data/
-
+outputs/
 # IDE-specific files
 .cursor/
 

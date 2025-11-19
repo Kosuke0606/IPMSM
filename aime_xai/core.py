@@ -696,7 +696,7 @@ class AIME:
         plt.figure(figsize=(4, 4))
         plt.imshow(
             signed2d,
-            cmap="inferno",
+            cmap="bwr",
             norm=mcolors.TwoSlopeNorm(vmin=-1, vcenter=0, vmax=1),
         )
         plt.title(title)
@@ -746,6 +746,14 @@ class AIME:
         """
         fig, axes = plt.subplots(rows, cols, figsize=(25, 10))
 
+        # axesを常に配列として扱えるようにする
+        if rows == 1 and cols == 1:
+            axes = np.array([[axes]])
+        elif rows == 1:
+            axes = axes.reshape(1, -1)
+        elif cols == 1:
+            axes = axes.reshape(-1, 1)
+
         # 各クラスごとに (H,W,C) へ整形し、RGB集約（符号付き）で表示
         for idx, class_label in enumerate(class_names):
             w_c = df_global.loc[class_label].values  # 長さ = n_channels*H*W
@@ -760,7 +768,7 @@ class AIME:
             signed2d = self.compute_signed_2d(w_c_img, mode=mode)
             im = ax.imshow(
                 signed2d,
-                cmap="inferno",
+                cmap="bwr",
                 norm=mcolors.TwoSlopeNorm(vmin=-1, vcenter=0, vmax=1),
             )
             ax.set_title(f"{class_label}")
@@ -776,7 +784,14 @@ class AIME:
         plt.close()
 
     def show_local_with_original(
-        self, orig_img3, contrib_img3, true_name, fname=None, mode="maxabs"
+        self,
+        orig_img3,
+        contrib_img3,
+        true_name,
+        fname=None,
+        mode="maxabs",
+        orig_vmin=None,
+        orig_vmax=None,
     ):
         """
         元画像とローカル特徴重要度を並べて可視化します。
@@ -803,17 +818,46 @@ class AIME:
         )
         ax0, ax1, cax = axes
 
+        # 値域の自動判定（元画像のコントラストを固定したい場合）
+        vmin = orig_vmin
+        vmax = orig_vmax
+        if vmin is None or vmax is None:
+            try:
+                if np.issubdtype(orig_img3.dtype, np.integer):
+                    info = np.iinfo(orig_img3.dtype)
+                    vmin = info.min if vmin is None else vmin
+                    vmax = info.max if vmax is None else vmax
+                else:
+                    minval = float(np.nanmin(orig_img3))
+                    maxval = float(np.nanmax(orig_img3))
+                    # 典型的な0-1/0-255レンジを推定
+                    if minval >= 0.0 and maxval <= 1.2:
+                        vmin = 0.0 if vmin is None else vmin
+                        vmax = 1.0 if vmax is None else vmax
+                    elif minval >= 0.0 and maxval <= 255.5:
+                        vmin = 0.0 if vmin is None else vmin
+                        vmax = 255.0 if vmax is None else vmax
+            except Exception:
+                # 失敗時は自動スケーリングにフォールバック
+                vmin, vmax = None, None
+
         # 元画像の表示（グレースケールまたはカラー）
         if orig_img3.ndim == 2:
-            ax0.imshow(orig_img3, cmap="gray")
+            if vmin is not None and vmax is not None:
+                ax0.imshow(orig_img3, cmap="gray", vmin=vmin, vmax=vmax)
+            else:
+                ax0.imshow(orig_img3, cmap="gray")
         else:
-            ax0.imshow(orig_img3)
+            if vmin is not None and vmax is not None:
+                ax0.imshow(orig_img3, vmin=vmin, vmax=vmax)
+            else:
+                ax0.imshow(orig_img3)
         ax0.set_title(f"Original (true={true_name})")
         ax0.axis("off")
 
         im = ax1.imshow(
             signed2d,
-            cmap="inferno",
+            cmap="bwr",
             norm=mcolors.TwoSlopeNorm(vmin=-1, vcenter=0, vmax=1),
         )
         ax1.set_title(f"Local Importance ({mode}, signed)")
