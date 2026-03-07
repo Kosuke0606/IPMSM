@@ -1,19 +1,34 @@
-# Python-generated files
+# Python bytecode and build artifacts
 __pycache__/
 *.py[oc]
 build/
 dist/
 wheels/
-*.egg-info
+*.egg-info/
+pip-wheel-metadata/
 
 # Virtual environments
-.venv
+.venv/
+venv/
 
-# Data directories
-20250425_data/
-outputs/
+# Python/Jupyter tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.coverage
+htmlcov/
+
 # IDE-specific files
+.vscode/
 .cursor/
 
-# Model files (too large for GitHub)
+# Project data and outputs
+20250425_data/
+outputs/
+
+# Trained model files
 *.keras
+
+# docs
+docs/
