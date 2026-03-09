@@ -170,6 +170,19 @@ class AIME:
 
         return M
 
+    def _prepare_local_input(self, x, scale=True, scaler=None):
+        """
+        Prepare a single input vector for local explanations.
+        If an explicit scaler is provided, it takes precedence over self.scaler.
+        """
+        x = np.asarray(x, dtype=float)
+        effective_scaler = scaler if scaler is not None else self.scaler
+
+        if scale and effective_scaler is not None:
+            return effective_scaler.transform([x])[0]
+
+        return x
+
     def global_feature_importance(
         self,
         feature_names=None,
@@ -327,7 +340,8 @@ class AIME:
     ):
         """
         Local feature importance for a single instance x with target y.
-        If scale=True and self.scaler is not None, we transform x accordingly.
+        If scale=True, we use the explicit scaler when provided,
+        otherwise fall back to self.scaler.
         Then compute A_dagger * y * x_prime as a naive decomposition.
         """
         if self.A_dagger is None:
@@ -335,10 +349,8 @@ class AIME:
         if x is None or y is None:
             raise ValueError("Please provide x,y for local explanation.")
 
-        if scale and (self.scaler is not None):
-            x_prime = self.scaler.transform([x])[0]
-        else:
-            x_prime = x
+        x = np.asarray(x, dtype=float)
+        x_prime = self._prepare_local_input(x, scale=scale, scaler=scaler)
 
         # naive decomposition: A_dagger @ y * x_prime
         heatmap = np.dot(self.A_dagger, y) * x_prime
@@ -386,10 +398,8 @@ class AIME:
         if x is None or y is None:
             raise ValueError("Please provide x,y for local explanation.")
 
-        if scale and (self.scaler is not None):
-            x_prime = self.scaler.transform([x])[0]
-        else:
-            x_prime = x
+        x = np.asarray(x, dtype=float)
+        x_prime = self._prepare_local_input(x, scale=scale, scaler=scaler)
 
         heatmap = np.dot(self.A_dagger, y) * x_prime
         if ignore_zero_features:
@@ -541,7 +551,6 @@ class AIME:
             )
         elif dim_reduce == "tsne":
             if x is not None:
-                x_scaled = scaler.transform([x]) if scaler else x
                 total_data = np.concatenate([X_scaled, repvec, x_scaled], axis=0)
             else:
                 total_data = np.concatenate([X_scaled, repvec], axis=0)
@@ -584,18 +593,6 @@ class AIME:
             )
 
         if x is not None:
-            if scaler is not None:
-                x_scaled = scaler.transform([x]).reshape(1, -1)
-            else:
-                x_scaled = x.reshape(1, -1)
-
-            if dim_reduce == "pca":
-                x_scaled = pca.transform(x_scaled)
-            elif dim_reduce == "tsne":
-                x_scaled = tsne.transform(x_scaled)  # 上記で完了
-            elif dim_reduce == "umap":
-                x_scaled = umapp.transform(x_scaled)
-
             focus_inst_scores = self.rbf_kernel(x_scaled, repvec, gamma)
             plt.scatter(
                 focus_inst_scores[0][class_indices[0]],
